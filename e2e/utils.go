@@ -193,7 +193,7 @@ func loadPVC(path string) *v1.PersistentVolumeClaim {
 func createPVCAndvalidatePV(c kubernetes.Interface, pvc *v1.PersistentVolumeClaim, timeout time.Duration) error {
 	pv := &v1.PersistentVolume{}
 	var err error
-	_, err = c.CoreV1().PersistentVolumeClaims("default").Create(pvc)
+	_, err = c.CoreV1().PersistentVolumeClaims(ns).Create(pvc)
 	Expect(err).Should(BeNil())
 	name := pvc.Name
 	start := time.Now()

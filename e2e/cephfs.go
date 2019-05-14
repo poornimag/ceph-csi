@@ -23,14 +23,13 @@ var (
 	cephfsDirPath = "../deploy/cephfs/kubernetes/"
 
 	cephfsExamplePath = "../examples/cephfs/"
-	defaultNS         = "default"
 )
 
-func createService(c kubernetes.Interface, ns, sPath string) {
+func createService(c kubernetes.Interface, sPath string) {
 	svc := &v1.Service{}
 	err := unmarshal(sPath, svc)
 	framework.ExpectNoError(err)
-	_, err = c.CoreV1().Services(defaultNS).Create(svc)
+	_, err = c.CoreV1().Services(ns).Create(svc)
 	framework.ExpectNoError(err)
 }
 func deployProvisioner(c kubernetes.Interface) {
@@ -39,10 +38,10 @@ func deployProvisioner(c kubernetes.Interface) {
 	err := unmarshal(pPath, pro)
 	framework.ExpectNoError(err)
 	//TODO need to update the image name
-	_, err = c.AppsV1beta1().StatefulSets(defaultNS).Create(pro)
+	_, err = c.AppsV1beta1().StatefulSets(ns).Create(pro)
 	framework.ExpectNoError(err)
 	sPath := cephfsDirPath + cephProvisionerSVC
-	createService(c, defaultNS, sPath)
+	createService(c, sPath)
 	//create provisoner RBAC
 	framework.RunKubectlOrDie("create", "-f", cephfsDirPath+cephProvisionerRBAC)
 }
@@ -53,7 +52,7 @@ func deployNodePlugin(c kubernetes.Interface) {
 	err := unmarshal(pPath, pro)
 	framework.ExpectNoError(err)
 	//TODO need to update the image name
-	_, err = c.AppsV1().DaemonSets(defaultNS).Create(pro)
+	_, err = c.AppsV1().DaemonSets(ns).Create(pro)
 	framework.ExpectNoError(err)
 	//create provisoner RBAC
 	framework.RunKubectlOrDie("create", "-f", cephfsDirPath+cephNodePluginRBAC)
@@ -99,13 +98,13 @@ var _ = Describe("cephfs", func() {
 		It("check ceph csi is up", func() {
 
 			By("checking provisioner statefulset is running")
-			err := framework.WaitForStatefulSetReplicasReady("csi-cephfsplugin-provisioner", "default", c, 2*time.Second, 2*time.Minute)
+			err := framework.WaitForStatefulSetReplicasReady("csi-cephfsplugin-provisioner", ns, c, 2*time.Second, 2*time.Minute)
 			if err != nil {
 				Fail(err.Error())
 			}
 
 			By("checking nodeplugin deamonsets is running")
-			err = waitForDaemonSets("csi-cephfsplugin", "default", c, 2*time.Minute)
+			err = waitForDaemonSets("csi-cephfsplugin", ns, c, 2*time.Minute)
 			if err != nil {
 				Fail(err.Error())
 			}
